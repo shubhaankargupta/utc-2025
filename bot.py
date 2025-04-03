@@ -1,9 +1,8 @@
 from typing import Optional
 
-import xchange_client
 import asyncio
 import argparse
-
+from utcxchangelib import xchange_client
 
 class MyXchangeClient(xchange_client.XChangeClient):
     '''A shell client with the methods that can be implemented to interact with the xchange.'''
