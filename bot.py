@@ -1,6 +1,6 @@
 from typing import Optional
 
-import xchange_client
+from utcxchangelib import xchange_client
 import asyncio
 import argparse
 
@@ -33,6 +33,9 @@ class MyXchangeClient(xchange_client.XChangeClient):
     async def bot_handle_news(self, news_release: dict):
 
         # Parsing the message based on what type was received
+        # APT, DLR, MKJ have different types of ways to handle the messages. 
+        # Use to figure out how to modify fair value of these securities
+        print(news_release)
         timestamp = news_release["timestamp"] # This is in exchange ticks not ISO or Epoch
         news_type = news_release['kind']
         news_data = news_release["new_data"]
@@ -59,33 +62,44 @@ class MyXchangeClient(xchange_client.XChangeClient):
 
             pass
 
+    #super simple strategy implementation
+    #for every trade that's made, update fair price to most recently transacted value
+    #then offer bid/ask around that value
     async def trade(self):
         await asyncio.sleep(5)
-        print("attempting to trade")
-        await self.place_order("APT",3, xchange_client.Side.BUY, 5)
-        await self.place_order("APT",3, xchange_client.Side.SELL, 7)
-        await asyncio.sleep(5)
-        await self.cancel_order(list(self.open_orders.keys())[0])
-        await self.place_swap_order('toAKAV', 1)
-        await asyncio.sleep(5)
-        await self.place_swap_order('fromAKAV', 1)
-        await asyncio.sleep(5)
-        await self.place_order("APT",1000, xchange_client.Side.SELL, 7)
-        await asyncio.sleep(5)
-        market_order_id = await self.place_order("APT",10, xchange_client.Side.SELL)
-        print("MARKET ORDER ID:", market_order_id)
-        await asyncio.sleep(5)
-        print("my positions:", self.positions)
-
-    async def view_books(self):
-        while True:
+        for i in range(200): 
+            for asset in ['APT', 'DLR', 'MKJ']:
+                print(f"{self.spreads}")
+                if asset in self.spreads and (self.spreads)[asset][1][0] - (self.spreads)[asset][0][0] > 2: 
+                    #for latency purposes, might want more efficient ways of getting min/max
+                    #might also want to incorporate fair price evals into this
+                    market_buy_id = await self.place_order(asset, 3, xchange_client.Side.BUY, (self.spreads)[asset][0][0]+1)
+                    market_sell_id = await self.place_order(asset, 3, xchange_client.Side.SELL, (self.spreads)[asset][0][0]-1)
+                    print("MARKET ORDER IDs:", market_buy_id, market_sell_id)
             await asyncio.sleep(3)
+            print("my positions:", self.positions)
+        # await self.place_order("APT",3, xchange_client.Side.BUY, 5)
+        # await self.place_order("APT",3, xchange_client.Side.SELL, 7)
+        # await asyncio.sleep(5)
+        # await self.cancel_order(list(self.open_orders.keys())[0])
+        # await self.place_swap_order('toAKAV', 1)
+        # await asyncio.sleep(5)
+        # await self.place_swap_order('fromAKAV', 1)
+        # await asyncio.sleep(5)
+        # await self.place_order("APT",1000, xchange_client.Side.SELL, 7)
+        # market_order_id = await self.place_order("APT",10, xchange_client.Side.SELL)
+        # print("MARKET ORDER ID:", market_order_id)
+
+    async def view_books(self) -> dict:
+        while True:
+            await asyncio.sleep(5)
             for security, book in self.order_books.items():
                 sorted_bids = sorted((k,v) for k,v in book.bids.items() if v != 0)
                 sorted_asks = sorted((k,v) for k,v in book.asks.items() if v != 0)
                 print(f"Bids for {security}:\n{sorted_bids}")
                 print(f"Asks for {security}:\n{sorted_asks}")
-
+                print(f"Spreads are {self.spreads}")
+        
     async def start(self, user_interface):
         asyncio.create_task(self.trade())
 
@@ -98,10 +112,12 @@ class MyXchangeClient(xchange_client.XChangeClient):
         await self.connect()
 
 
-async def main(user_interface: bool):
+user_interface = True 
+
+async def main(user_interface : bool):
     # SERVER = '127.0.0.1:8000'   # run locally
-    SERVER = 'SERVER URL'
-    my_client = MyXchangeClient(SERVER,"USERNAME","PASSWORD")
+    SERVER = '3.138.154.148:3333' # run sandbox
+    my_client = MyXchangeClient(SERVER,"chicago4","Hrb8t5)V&q")
     await my_client.start(user_interface)
     return
 
