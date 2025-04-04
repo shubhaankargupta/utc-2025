@@ -68,14 +68,37 @@ class MyXchangeClient(xchange_client.XChangeClient):
     async def trade(self):
         await asyncio.sleep(5)
         for i in range(200): 
+            akav_sum_buy_price, akav_sum_sell_price = 0, 0
+            print(f"{self.spreads}")
             for asset in ['APT', 'DLR', 'MKJ']:
-                print(f"{self.spreads}")
                 if asset in self.spreads and (self.spreads)[asset][1][0] - (self.spreads)[asset][0][0] > 2: 
                     #for latency purposes, might want more efficient ways of getting min/max
                     #might also want to incorporate fair price evals into this
                     market_buy_id = await self.place_order(asset, 3, xchange_client.Side.BUY, (self.spreads)[asset][0][0]+1)
-                    market_sell_id = await self.place_order(asset, 3, xchange_client.Side.SELL, (self.spreads)[asset][0][0]-1)
-                    print("MARKET ORDER IDs:", market_buy_id, market_sell_id)
+                    akav_sum_buy_price += (self.spreads)[asset][0][0]
+                    market_sell_id = await self.place_order(asset, 3, xchange_client.Side.SELL, (self.spreads)[asset][1][0]-1)
+                    akav_sum_sell_price += (self.spreads)[asset][1][0]
+                    print(f"ORDERS PLACED FOR {asset}, buy at {(self.spreads)[asset][0][0]+1}, sell at {(self.spreads)[asset][1][0]-1}")
+
+            # etf_mm = True
+            # for asset in ['APT', 'DLR', 'MKJ', 'AKAV']:
+            #     if asset not in self.spreads:
+            #         etf_mm = False
+
+            # if etf_mm:
+            #     #do stuff w/ etfs.
+            #     if akav_sum_buy_price + 5 < (self.spreads)['AKAV'][0][0]:
+            #         #buy etf, convert it back to individual stocks, buy them on exchange
+            #         self.place_swap_order('toAKAV', 1)
+                
+
+
+
+            #This somehow gives positive PNL against the bots lmao^^^
+            #Next: figuring out how to price assets in a better manner
+            #Also, figure out how to price ETFs. Might want to learn how to hedge AKIM w/ AKAV
+
+
             await asyncio.sleep(3)
             print("my positions:", self.positions)
         # await self.place_order("APT",3, xchange_client.Side.BUY, 5)
