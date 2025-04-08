@@ -38,7 +38,6 @@ class MyXchangeClient(xchange_client.XChangeClient):
         # Parsing the message based on what type was received
         # APT, DLR, MKJ have different types of ways to handle the messages. 
         # Use to figure out how to modify fair value of these securities
-        print(news_release)
         timestamp = news_release["timestamp"] # This is in exchange ticks not ISO or Epoch
         news_type = news_release['kind']
         news_data = news_release["new_data"]
@@ -79,7 +78,7 @@ class MyXchangeClient(xchange_client.XChangeClient):
                 # EV = 100 * p(will reach 100,000 sigs), so trade around this fair price
 
         else:
-
+            print(news_release)
             # Not sure what you would do with unstructured data....
             # Think this has to do with click trading, actually. 
             pass
@@ -92,7 +91,7 @@ class MyXchangeClient(xchange_client.XChangeClient):
         self.positions['AKIM'] = 0
         self.fair_prices['DLR'] = 5000
         self.fair_prices['APT'] = 1000
-        self.updates['DLR'] = 25
+        self.updates['DLR'] = 0
         while True:
 
             # await asyncio.sleep(1)
@@ -107,15 +106,14 @@ class MyXchangeClient(xchange_client.XChangeClient):
             #     print(f"Bids for {symbol} are {bids_sorted}\n")
             #     print(f"Asks for {symbol} are {asks_sorted}\n")
             # print(f"Spreads are {self.spreads}\n")
-            for asset in ['APT', 'DLR']:
-                fair_price = self.fair_prices[asset]
-                # print(f"fair price for {asset} is {fair_price}")
-                if asset == 'APT':
-                    market_buy_id = await self.place_order(asset, 4, xchange_client.Side.BUY, int(fair_price-2))
-                    market_sell_id = await self.place_order(asset, 4, xchange_client.Side.SELL, int(fair_price + 2))
-                # else:
-                #     market_sell_id = await self.place_order(asset, 30, xchange_client.Side.SELL, 300)
-                print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
+            # for asset in ['APT', 'DLR']:
+            #     fair_price = self.fair_prices[asset]
+            #     # print(f"fair price for {asset} is {fair_price}")
+            #     market_buy_id = await self.place_order(asset, 4, xchange_client.Side.BUY, int(fair_price-2))
+            #     market_sell_id = await self.place_order(asset, 4, xchange_client.Side.SELL, int(fair_price + 2))
+            #     # else:
+            #     #     market_sell_id = await self.place_order(asset, 30, xchange_client.Side.SELL, 300)
+            #     print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
                     # Strat: frontrun existing bid/asks
                     # Look at the best bid, add 1, look at the best sell, subtract 1
                     # Obviously, don't do this if best sell - best bid < 2, which I'm assuming it will be during the competition
@@ -151,7 +149,7 @@ class MyXchangeClient(xchange_client.XChangeClient):
             #This gives fairly good PNL against bots, but this is because bots are dumb
             #Next: figuring out how to price assets in a better manner
             #Also, figure out how to price ETFs. Might want to learn how to hedge AKIM w/ AKAV
-            print("my positions:", self.positions)
+            # print("my positions:", self.positions)
             await asyncio.sleep(2)
         # await self.place_order("APT",3, xchange_client.Side.BUY, 5)
         # await self.place_order("APT",3, xchange_client.Side.SELL, 7)
