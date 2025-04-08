@@ -2,6 +2,7 @@ from typing import Optional
 
 from utcxchangelib import xchange_client
 import numpy as np
+from scipy.stats import lognorm
 import asyncio
 import argparse
 
@@ -10,7 +11,8 @@ class MyXchangeClient(xchange_client.XChangeClient):
 
     def __init__(self, host: str, username: str, password: str):
         super().__init__(host, username, password)
-
+        self.fair_prices = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
+        self.updates = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
     async def bot_handle_cancel_response(self, order_id: str, success: bool, error: Optional[str]) -> None:
         order = self.open_orders[order_id]
         print(f"{'Market' if order[2] else 'Limit'} Order ID {order_id} cancelled, {order[1]} unfilled")
@@ -45,11 +47,12 @@ class MyXchangeClient(xchange_client.XChangeClient):
             subtype = news_data["structured_subtype"]
             symb = news_data["asset"]
             if subtype == "earnings":
+                self.updates['APT'] += 1
                 earnings = news_data["value"]
-                self.fair_prices['APT'] = 100 * earnings #may have to change this value during the actual competition
+                self.fair_prices['APT'] = 10 * earnings #may have to change this value during the actual competition
                 #trade around this value
             else:
-                
+                self.updates['DLR'] += 1
                 new_signatures = news_data["new_signatures"]
                 cumulative = news_data["cumulative"]
                 #S_i = lognormal(log a + log S_(i-1), sigma^2)
@@ -58,20 +61,20 @@ class MyXchangeClient(xchange_client.XChangeClient):
                 alpha = 1.0630449594499
                 sigma = 0.006
                 log_alpha = np.log(alpha)
-                remaining_sigs = 100000 - cumulative
-                ev_per_next_rds = new_signatures * alpha
-                rounds_remaining = 50 - self.DLR_updates
-
-                good_sims = 0
-                #just gonna do a monte carlo here lol
-                for i in range(1000): #1000 sims
-                    init_new_sigs = new_signatures
-                    for j in range(rounds_remaining):
-                        mu = np.log(init_new_sigs) + log_alpha
-                        init_new_sigs = np.random.lognormal(mean=mu, sigma=0.006)
-                    good_sims += (init_new_sigs >= 100000)
-
-                self.fair_prices['DLR'] = good_sims * 10
+                rounds_remaining = 50 - self.updates['DLR']
+                print("CUMULATIVE, ROUNDS REMAINING ARE", cumulative, rounds_remaining)
+                # good_sims = 0
+                # #just gonna do a monte carlo here lol
+                # for i in range(1000): #1000 sims
+                #     init_new_sigs = cumulative
+                #     for j in range(rounds_remaining):
+                #         mu = np.log(init_new_sigs) + log_alpha
+                #         init_new_sigs = np.random.lognormal(mean=mu, sigma=0.006)
+                #     good_sims += (init_new_sigs >= 100000)
+                mu = np.log(cumulative) + rounds_remaining * np.log(alpha)  
+                tau = np.sqrt(rounds_remaining * sigma**2)
+                prob = 1 - lognorm.cdf(100000, s = tau, scale=np.exp(mu))
+                self.fair_prices['DLR'] = prob * 10000
                 # Do something with this data
                 # EV = 100 * p(will reach 100,000 sigs), so trade around this fair price
 
@@ -84,40 +87,35 @@ class MyXchangeClient(xchange_client.XChangeClient):
     #super simple strategy implementation
     #for every trade that's made, update fair price to most recently transacted value
     #then offer bid/ask around that value
-    async def trade(self):
-        await asyncio.sleep(5)  
+    async def trade(self): 
         self.positions['AKAV'] = 0
         self.positions['AKIM'] = 0
         self.fair_prices['DLR'] = 5000
+        self.fair_prices['APT'] = 1000
+        self.updates['DLR'] = 25
         while True:
 
-            await asyncio.sleep(1)
-            self.spreads = {}
-            for symbol in ['APT', 'DLR', 'MKJ', 'AKAV', 'AKIM']:
-                bids = self.order_books[symbol].bids
-                asks = self.order_books[symbol].asks
-                bids_sorted = sorted((k,v) for k,v in bids.items() if v != 0)
-                asks_sorted = sorted((k,v) for k,v in asks.items() if v != 0)
-                if bids_sorted and asks_sorted:
-                    self.spreads[symbol] = (bids_sorted[0], asks_sorted[-1])
-                print(f"Bids for {symbol} are {bids_sorted}\n")
-                print(f"Asks for {symbol} are {asks_sorted}\n")
-            print(f"Spreads are {self.spreads}\n")
+            # await asyncio.sleep(1)
+            # self.spreads = {}
+            # for symbol in ['APT', 'DLR', 'MKJ', 'AKAV', 'AKIM']:
+            #     bids = self.order_books[symbol].bids
+            #     asks = self.order_books[symbol].asks
+            #     bids_sorted = sorted((k,v) for k,v in bids.items() if v != 0)
+            #     asks_sorted = sorted((k,v) for k,v in asks.items() if v != 0)
+            #     if bids_sorted and asks_sorted:
+            #         self.spreads[symbol] = (bids_sorted[0], asks_sorted[-1])
+            #     print(f"Bids for {symbol} are {bids_sorted}\n")
+            #     print(f"Asks for {symbol} are {asks_sorted}\n")
+            # print(f"Spreads are {self.spreads}\n")
             for asset in ['APT', 'DLR']:
-                fair_price = self.fair_price[asset]
-                market_buy_id = await self.place_order(asset, 4, xchange_client.Side.BUY, fair_price-2)
-                market_sell_id = await self.place_order(asset, 4, xchange_client.Side.SELL, fair_price + 2)
-                # if asset in self.spreads and (self.spreads)[asset][1][0] - (self.spreads)[asset][0][0] > 2: 
-                #     #for latency purposes, might want more efficient ways of getting min/max
-                #     #might also want to incorporate fair price evals into this 
-                #     #OR we could just let other people do it for us (which is what this strat takes advantage of)
-
-                #     market_buy_id = await self.place_order(asset, 4, xchange_client.Side.BUY, (self.spreads)[asset][0][0]+1)
-                #     akav_sum_buy_price += (self.spreads)[asset][0][0] + 1
-                #     market_sell_id = await self.place_order(asset, 4, xchange_client.Side.SELL, (self.spreads)[asset][1][0]-1)
-                #     akav_sum_sell_price += (self.spreads)[asset][1][0] - 1
-                #     print(f"ORDERS PLACED FOR {asset}, buy at {(self.spreads)[asset][0][0]+1}, sell at {(self.spreads)[asset][1][0]-1}")
-                    
+                fair_price = self.fair_prices[asset]
+                # print(f"fair price for {asset} is {fair_price}")
+                if asset == 'APT':
+                    market_buy_id = await self.place_order(asset, 4, xchange_client.Side.BUY, int(fair_price-2))
+                    market_sell_id = await self.place_order(asset, 4, xchange_client.Side.SELL, int(fair_price + 2))
+                # else:
+                #     market_sell_id = await self.place_order(asset, 30, xchange_client.Side.SELL, 300)
+                print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
                     # Strat: frontrun existing bid/asks
                     # Look at the best bid, add 1, look at the best sell, subtract 1
                     # Obviously, don't do this if best sell - best bid < 2, which I'm assuming it will be during the competition
@@ -189,7 +187,7 @@ class MyXchangeClient(xchange_client.XChangeClient):
         await self.connect()
 
 
-user_interface = True 
+user_interface = False
 
 async def main(user_interface : bool):
     # SERVER = '127.0.0.1:8000'   # run locally
