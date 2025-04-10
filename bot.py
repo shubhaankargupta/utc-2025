@@ -6,6 +6,8 @@ from scipy.stats import lognorm
 import asyncio
 import argparse
 
+#IP address: 18.222.177.21
+#Password: Hrb8t5)V&q
 
 class MyXchangeClient(xchange_client.XChangeClient):
 
@@ -13,6 +15,7 @@ class MyXchangeClient(xchange_client.XChangeClient):
         super().__init__(host, username, password)
         self.fair_prices = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
         self.updates = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
+        self.market_fair_prices = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
     async def bot_handle_cancel_response(self, order_id: str, success: bool, error: Optional[str]) -> None:
         order = self.open_orders[order_id]
         print(f"{'Market' if order[2] else 'Limit'} Order ID {order_id} cancelled, {order[1]} unfilled")
@@ -74,51 +77,80 @@ class MyXchangeClient(xchange_client.XChangeClient):
                 tau = np.sqrt(rounds_remaining * sigma**2)
                 prob = 1 - lognorm.cdf(100000, s = tau, scale=np.exp(mu))
                 self.fair_prices['DLR'] = prob * 10000
-                # Do something with this data
                 # EV = 100 * p(will reach 100,000 sigs), so trade around this fair price
 
         else:
+            increased = 0
+            print(f"previous fair price is {self.fair_prices['MKJ']}")
+            prev_fair = self.fair_prices['MKJ']
+            highest_bid, lowest_ask = 0, 0
+            for security, book in self.order_books.items():
+                if security == 'MKJ':
+                    highest_bid = max(((k,v) for k,v in book.bids.items() if v != 0))[0]
+                    lowest_ask = min(((k,v) for k,v in book.asks.items() if v != 0))[0]
+                    
+                    if highest_bid and lowest_ask and highest_bid < lowest_ask + 1:
+                        fair_price = (highest_bid + lowest_ask)//2
+                        if fair_price > prev_fair:
+                            print(f"difference is {fair_price}, {self.fair_prices['MKJ']}")
+                            self.fair_prices['MKJ'] = fair_price
+                            increased = 1
+
+
+            # for a slight competitive edge, there are SOME messages that might guarantee positive PNL.
+                    
             print(news_release)
-            # Not sure what you would do with unstructured data....
+            f = open("unstructured3.txt", "a")
+            news = news_release['new_data']['content']
+            f.write(f'{news}: {increased} with previous fair price at {prev_fair}, new at {fair_price}\n')
+
+            # Trying to correlate news with positive/negative gain, data on a different file.
             # Think this has to do with click trading, actually. 
-            pass
 
     #super simple strategy implementation
     #for every trade that's made, update fair price to most recently transacted value
     #then offer bid/ask around that value
     async def trade(self): 
-        self.positions['AKAV'] = 0
-        self.positions['AKIM'] = 0
-        self.fair_prices['DLR'] = 5000
-        self.fair_prices['APT'] = 1000
+        self.fair_prices['DLR'] = self.market_fair_prices['DLR'] = 5000
+        self.fair_prices['APT'] = self.market_fair_prices['APT'] = 1000
+        self.fair_prices['MKJ'] = self.market_fair_prices['MKJ'] = 1000
+        self.fair_prices['AKAV'] = self.market_fair_prices['AKAV'] = 7000
+        self.fair_prices['AKIM'] = self.market_fair_prices['AKIM'] = 8000 # for now
+
+        #update these later
+        
         self.updates['DLR'] = 0
         while True:
 
-            # await asyncio.sleep(1)
-            # self.spreads = {}
-            # for symbol in ['APT', 'DLR', 'MKJ', 'AKAV', 'AKIM']:
-            #     bids = self.order_books[symbol].bids
-            #     asks = self.order_books[symbol].asks
-            #     bids_sorted = sorted((k,v) for k,v in bids.items() if v != 0)
-            #     asks_sorted = sorted((k,v) for k,v in asks.items() if v != 0)
-            #     if bids_sorted and asks_sorted:
-            #         self.spreads[symbol] = (bids_sorted[0], asks_sorted[-1])
-            #     print(f"Bids for {symbol} are {bids_sorted}\n")
-            #     print(f"Asks for {symbol} are {asks_sorted}\n")
-            # print(f"Spreads are {self.spreads}\n")
-            # for asset in ['APT', 'DLR']:
-            #     fair_price = self.fair_prices[asset]
-            #     # print(f"fair price for {asset} is {fair_price}")
-            #     market_buy_id = await self.place_order(asset, 4, xchange_client.Side.BUY, int(fair_price-2))
-            #     market_sell_id = await self.place_order(asset, 4, xchange_client.Side.SELL, int(fair_price + 2))
-            #     # else:
-            #     #     market_sell_id = await self.place_order(asset, 30, xchange_client.Side.SELL, 300)
-            #     print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
-                    # Strat: frontrun existing bid/asks
-                    # Look at the best bid, add 1, look at the best sell, subtract 1
-                    # Obviously, don't do this if best sell - best bid < 2, which I'm assuming it will be during the competition
-                    # However, as orders fill, our outstanding orders will gradually get processed, which is arb over time
-                    # Simplicity = good type shi
+            await asyncio.sleep(1)
+            for symbol in ['APT', 'DLR', 'MKJ', 'AKAV', 'AKIM']:
+                book = self.order_books[symbol]
+                sorted_bids = sorted((k,v) for k,v in book.bids.items() if v != 0)
+                sorted_asks = sorted((k,v) for k,v in book.asks.items() if v != 0)
+                print(f"Bids for {symbol}:\n{sorted_bids}")
+                print(f"Asks for {symbol}:\n{sorted_asks}")
+                if sorted_bids and sorted_asks:
+                    bids_max = sorted_bids[-1][0]
+                    ask_min = sorted_asks[0][0]
+                    if bids_max < ask_min + 1:
+                        self.market_fair_prices[symbol] = (bids_max + ask_min)//2
+                    else:
+                        self.market_fair_prices[symbol] = self.fair_prices[symbol]
+                if symbol in ['MKJ', 'AKAV', 'AKIM']:
+                    self.fair_prices[symbol] = self.market_fair_prices[symbol]
+                # if there are no spreads, might also be worth it to just _not_ trade the stock at that moment
+                #         
+                print(f"Market fair price for {symbol} is {self.market_fair_prices[symbol]}\n")
+
+            for asset in ['APT', 'DLR']:
+                fair_price = self.fair_prices[asset]
+                market_buy_id = await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price-2))
+                market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price + 2))
+                print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
+            
+            mkj_price = self.market_fair_prices['MKJ']
+            mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(mkj_price-2))
+            market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(mkj_price + 2))
 
 
             # etf_mm = True
@@ -132,28 +164,37 @@ class MyXchangeClient(xchange_client.XChangeClient):
             # #our fair sell price = best ask - 1
             # #if we have an etf at best bid + 1, it's optimal to buy if best bid + 1 (etf) + 5 < sum (fair buy prices)
             # #if we have an etf at best_ask - 1, it's optimal to sell if sum (fair sell prices) + 5 < best_sell -1
-            # if etf_mm:
-            #     #do stuff w/ etfs. for testing purposes
-            #     print("\nETF market making\n")
-            #     if (self.spreads)['AKAV'][0][0] + 1 + 5 < akav_sum_buy_price:
-            #         #buy etf, convert it back to individual stocks, buy them on exchange
-            #         #math time: if we buy etf for price p -> convert to x, y, z (our fair prices for buying)
-            #         self.place_order('AKAV', 1, xchange_client.Side.BUY, (self.spreads)['AKAV'][0][0] + 1)
-            #         if self.positions['AKAV'] > 0:
-            #             #assuming its bought, convert 1 share to stocks (idk if this is needed)
-            #             self.place_swap_order('fromAKAV', 1)
-            #     elif akav_sum_sell_price + 5 < (self.spreads)['AKAV'][1][0] - 1:
-            #         self.place_swap_order('toAKAV', 1)
-            #         self.place_order('AKAV', 1, xchange_client.Side.SELL, (self.spreads)['AKAV'][1][0] -1)
+            akav_fair_price = 0
+            for asset in ['APT', 'DLR', 'MKJ']:
+                akav_fair_price += self.fair_prices[asset]
+            print("\nETF market making\n")
+            akav_market_price = self.fair_prices['AKAV']
+            if akav_market_price + 5 < akav_fair_price:
+                #buy etf, convert it back to individual stocks, buy them on exchange
+                #math time: if we buy etf for price p -> convert to x, y, z (our fair prices for buying)
+                spread = akav_fair_price - akav_market_price - 5
+                self.place_order('AKAV', 1, xchange_client.Side.BUY, akav_market_price + spread - 2)
+                self.place_order('AKIM', 1, xchange_client.SIDE.SELL, self.market_fair_prices['AKIM']) 
+                # if self.positions['AKAV'] > 0:
+                    
+                #     for asset in ['APT', 'DLR']:
+                #         fair_price = self.fair_prices[asset]
+                #         market_buy_id = await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price-2))
+                #         market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price + 2))
+                #         print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
+        
+                #     mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(fair_price-2))
+                #     market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(fair_price + 2))
+                print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, UNBUNDLE ETF -> ASSETS\n")
 
+            elif akav_market_price > akav_fair_price + 5:
+                self.place_swap_order('toAKAV', 1)
+                self.place_order('AKIM', 1, xchange_client.SIDE.BUY, self.market_fair_prices['AKIM']-1)
+                print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, BUNDLE ASSETS INTO ETFs \n")
             #This gives fairly good PNL against bots, but this is because bots are dumb
             #Next: figuring out how to price assets in a better manner
             #Also, figure out how to price ETFs. Might want to learn how to hedge AKIM w/ AKAV
-            # print("my positions:", self.positions)
-            await asyncio.sleep(2)
-        # await self.place_order("APT",3, xchange_client.Side.BUY, 5)
-        # await self.place_order("APT",3, xchange_client.Side.SELL, 7)
-        # await asyncio.sleep(5)
+            print("my positions:", self.positions)
         # await self.cancel_order(list(self.open_orders.keys())[0])
         # await self.place_swap_order('toAKAV', 1)
         # await asyncio.sleep(5)
@@ -163,16 +204,13 @@ class MyXchangeClient(xchange_client.XChangeClient):
         # market_order_id = await self.place_order("APT",10, xchange_client.Side.SELL)
         # print("MARKET ORDER ID:", market_order_id)
 
-    async def view_books(self) -> dict:
-        while True:
-            await asyncio.sleep(5)
-            for security, book in self.order_books.items():
-                sorted_bids = sorted((k,v) for k,v in book.bids.items() if v != 0)
-                sorted_asks = sorted((k,v) for k,v in book.asks.items() if v != 0)
-                print(f"Bids for {security}:\n{sorted_bids}")
-                print(f"Asks for {security}:\n{sorted_asks}")
-                print(f"Spreads are {self.spreads}")
-        
+    async def view_books(self) -> None:
+        for security, book in self.order_books.items():
+            sorted_bids = sorted((k,v) for k,v in book.bids.items() if v != 0)
+            sorted_asks = sorted((k,v) for k,v in book.asks.items() if v != 0)
+            print(f"Bids for {security}:\n{sorted_bids}")
+            print(f"Asks for {security}:\n{sorted_asks}")
+    
     async def start(self, user_interface):
         asyncio.create_task(self.trade())
 

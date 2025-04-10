@@ -1,0 +1,104 @@
+Unstructured news
+Maybe ignore the numbers at the end, because of latency (0 = price fell, 1 = price rose). def ignore the firstfew
+
+
+BREAKING: Conspiracy Theorists Say UFOs Control Financial Markets, Investors Unmoved 1
+BREAKING: New Coin Inspired by Famous Conspiracy Theories Breaks Market Records 0
+BREAKING: Time Traveler Stocks Surge After Instagram Post Predicts Market Crash in 2025 0
+BREAKING: Analyst Claims There's a Hidden Message in Stock Ticker Symbols—No One Believes Him 1
+BREAKING: Analyst Claims That the Stock Market Is Controlled by Shape-Shifting Reptiles 0
+BREAKING: Investors Buy Into ‘HologramCoin’ After Viral ‘Future Stock’ Ad 0
+BREAKING: Alien-Inspired Blockchain Technology Could Transform Global Financial Systems 1
+BREAKING: Analyst Claims That the Stock Market Is Controlled by Shape-Shifting Reptiles 0
+BREAKING: 10,000-Year-Old Artifact Found, Conspiracy Theorists Say It’s the Key to Unlocking Market Trends 0
+BREAKING: Investors Flock to ‘TimeCoin’ After Claims of Time Travel Backing It Up 0
+﻿BREAKING: UFO Sighted Over Silicon Valley. Investors Still Watching Bitcoin 0
+BREAKING: MemeCoin Based on Famous Internet Conspiracies Launches, Market Doubts Its Longevity 0
+BREAKING: Conspiracy Theorists Claim the Moon Landing Was Just a Big Bitcoin Mining Operation 0
+BREAKING: MemeCoin Inspired by Bigfoot Becomes New Favorite Among Crypto Enthusiasts 0
+BREAKING: Conspiracy Theorist Claims to Have Found Hidden Code in Financial Markets 0
+BREAKING: Alien Cryptocurrency Leaks on 4chan, No One Knows What It Does 0
+BREAKING: Local Investor Claims to Have Gained Stock Market Success by Talking to His Plants 0
+BREAKING: Investor Makes First Million Trading Stocks Using Astrology and Ancient Tarot Cards 0
+BREAKING: MemeCoin Based on Famous Internet Conspiracies Launches, Market Doubts Its Longevity 0
+BREAKING: Investor Buys Stocks Using Only Predictions From the Future 0
+BREAKING: Stock Market Analyst Finds Coincidence Between Full Moon and Bull Runs: 1 with previous fair price at 1000, new at 1055
+BREAKING: UFOs Seen Near Wall Street, Conspiracy Theorists Predict Market Collapse: 0 with previous fair price at 1055, new at 914
+BREAKING: Alien Language Decoded, Investors Rush to Buy 'GalacticCoin' Before It’s Too Late: 0 with previous fair price at 1055, new at 987
+BREAKING: Stock Prices Expected to Rise After Meteor Shower Tonight, Says Unverified Source: 1 with previous fair price at 1055, new at 1092
+BREAKING: Time Traveler Coin Surges After ‘Futuristic’ Predictions Go Viral: 0 with previous fair price at 1000, new at 947
+BREAKING: Financial Experts Say the Stock Market Is Controlled by Hidden Alien Forces: 0 with previous fair price at 1000, new at 979
+BREAKING: Stock Market Analyst Finds Coincidence Between Full Moon and Bull Runs: 1 with previous fair price at 1000, new at 1112
+BREAKING: Time Traveler Reveals Stock Secrets from the Year 2099, Investors Doubtful: 0 with previous fair price at 1112, new at 1003
+BREAKING: Financial Analyst Suggests Bitcoin's True Value Lies in Hidden Messages: 0 with previous fair price at 1000, new at 983
+BREAKING: Time Traveler Stocks Surge After Instagram Post Predicts Market Crash in 2025: 0 with previous fair price at 1000, new at 847
+BREAKING: Alien Stock Picks Go Viral, Investors Scramble to Follow Their ‘Lead’: 1 with previous fair price at 1000, new at 1018
+BREAKING: Cryptocurrency ‘DoppelCoin’ Gains Popularity After Claims of Multiple Realities: 0 with previous fair price at 1018, new at 789
+BREAKING: Investors Use Quantum Computing to Predict the Next Big MemeCoin: 1 with previous fair price at 1018, new at 1087
+BREAKING: Investor Claims to Have Found Hidden Patterns in Stock Charts Using Dream Interpretation: 0 with previous fair price at 1087, new at 878
+BREAKING: Alien Investors Could Be Behind the Latest Cryptocurrency Surge: 0 with previous fair price at 1087, new at 893
+BREAKING: Stock Market Analyst Finds Coincidence Between Full Moon and Bull Runs: 0 with previous fair price at 1087, new at 1055
+BREAKING: UFOs Seen Near Wall Street, Conspiracy Theorists Predict Market Collapse: 0 with previous fair price at 1087, new at 914
+BREAKING: Alien Language Decoded, Investors Rush to Buy 'GalacticCoin' Before It’s Too Late: 0 with previous fair price at 1087, new at 987
+BREAKING: Stock Prices Expected to Rise After Meteor Shower Tonight, Says Unverified Source: 1 with previous fair price at 1087, new at 1092
+BREAKING: Analyst Claims That the Stock Market Is Controlled by Shape-Shifting Reptiles: 1 with previous fair price at 1000, new at 1094
+BREAKING: Local Hacker Claims to Have Found a Way to Short the Moon: 0 with previous fair price at 1094, new at 977
+BREAKING: Coin Based on Parallel Universes Declares Itself the Future of Global Finance: 1 with previous fair price at 1094, new at 1299
+BREAKING: Time Traveler Advises Investors to Buy Stock in 2026, Everyone Ignores It: 0 with previous fair price at 1299, new at 943
+BREAKING: Financial Experts Say the Stock Market Is Controlled by Hidden Alien Forces: 0 with previous fair price at 1000, new at 868
+BREAKING: Pyramids Linked to Global Finance Systems by Unknown Source: 0 with previous fair price at 1000, new at 943
+BREAKING: Analyst Claims There's a Hidden Message in Stock Ticker Symbols—No One Believes Him: 1 with previous fair price at 1000, new at 1016
+BREAKING: Investors Turn to ‘GhostCurrency’ After Haunted House Experiences: 1 with previous fair price at 1016, new at 1162
+BREAKING: Area 51 to Start Mining Crypto? Investors React by Buying AlienCoins: 0 with previous fair price at 1162, new at 1059
+BREAKING: Cryptocurrency ‘DoppelCoin’ Gains Popularity After Claims of Multiple Realities: 0 with previous fair price at 1162, new at 1058
+BREAKING: Man On Twitter Claims He Can Predict Stock Prices with Tarot Cards: 0 with previous fair price at 1162, new at 901
+BREAKING: Cryptocurrency Based on Time-Traveling Algorithms Gains Popularity: 0 with previous fair price at 1162, new at 1031
+BREAKING: Twitter User Claims ‘SpaceTimeCoin’ Will Be the Next Big Thing, Analysts Laugh: 0 with previous fair price at 1162, new at 962
+BREAKING: Conspiracy Theory Says Blockchain Is a Secret Government Experiment: 0 with previous fair price at 1162, new at 998
+BREAKING: Analyst Predicts Stock Price Movement Using Tarot Cards and Crystal Balls: 0 with previous fair price at 1162, new at 964
+BREAKING: New MemeCoin, ‘MartianCoin,’ Gains Popularity After UFO Sighting: 0 with previous fair price at 1162, new at 1038
+BREAKING: 10,000-Year-Old Artifact Found, Conspiracy Theorists Say It’s the Key to Unlocking Market Trends: 0 with previous fair price at 1162, new at 1037
+BREAKING: Shark Tank Contestant Reveals ‘Time Traveler Coin,’ Investors Laugh It Off: 0 with previous fair price at 1162, new at 867
+BREAKING: UFO-Influenced Coin Surges, Experts Claim It’s Just Another Pump and Dump: 0 with previous fair price at 1162, new at 959
+BREAKING: Investors Use Quantum Computing to Predict the Next Big MemeCoin: 0 with previous fair price at 1162, new at 866
+BREAKING: Alien Stock Ticker Found in Nevada Desert, Experts Call It ‘A Sign’: 0 with previous fair price at 1162, new at 887
+BREAKING: Fortune Teller Claims to Have Seen 2025’s Best Stocks in a Dream: 0 with previous fair price at 1000, new at 925
+BREAKING: Investors Betting on Moon Landing Coin After Latest Conspiracy Video: 1 with previous fair price at 1000, new at 1055
+BREAKING: Investor Claims to Have Found Hidden Patterns in Stock Charts Using Dream Interpretation: 0 with previous fair price at 1055, new at 935
+BREAKING: Local Hacker Claims to Have Found a Way to Short the Moon: 0 with previous fair price at 1000, new at 933
+BREAKING: MemeCoin Inspired by Bigfoot Becomes New Favorite Among Crypto Enthusiasts: 0 with previous fair price at 1000, new at 980
+BREAKING: UFO Sighting Coin Inspired by Outer Space Rumors Reaches New High: 0 with previous fair price at 1000, new at 970
+BREAKING: Investors Buy Into ‘HologramCoin’ After Viral ‘Future Stock’ Ad: 0 with previous fair price at 1000, new at 945
+BREAKING: Local Psychic Predicts Global Market Surge in 2026, Investors Skeptical: 0 with previous fair price at 1000, new at 974
+BREAKING: Local Pizza Shop Now Accepts Cryptocurrency, Wall Street Unbothered: 1 with previous fair price at 1000, new at 1036
+BREAKING: Investors Invest in 'QuantumCoin,' Based on Theories About Parallel Universes: 0 with previous fair price at 1000, new at 999
+BREAKING: New Cryptocurrency Launches Based on Parallel Universes, No One Knows How It Works: 0 with previous fair price at 1000, new at 934
+BREAKING: Reddit Claims to Have Cracked the Code Behind Global Stock Movements: 0 with previous fair price at 1000, new at 939
+BREAKING: Conspiracy Theorists Say UFOs Control Financial Markets, Investors Unmoved: 1 with previous fair price at 1000, new at 1002
+BREAKING: Time Traveler Stocks Surge After Instagram Post Predicts Market Crash in 2025: 0 with previous fair price at 1000, new at 944
+BREAKING: Analyst Claims There's a Hidden Message in Stock Ticker Symbols—No One Believes Him: 1 with previous fair price at 1000, new at 1013
+BREAKING: Investors Buy Into ‘HologramCoin’ After Viral ‘Future Stock’ Ad: 0 with previous fair price at 1000, new at 978
+BREAKING: Alien-Inspired Blockchain Technology Could Transform Global Financial Systems: 1 with previous fair price at 1000, new at 1140
+BREAKING: Analyst Claims That the Stock Market Is Controlled by Shape-Shifting Reptiles: 0 with previous fair price at 1140, new at 791
+BREAKING: 10,000-Year-Old Artifact Found, Conspiracy Theorists Say It’s the Key to Unlocking Market Trends: 0 with previous fair price at 1140, new at 960
+BREAKING: Investors Flock to ‘TimeCoin’ After Claims of Time Travel Backing It Up: 0 with previous fair price at 1140, new at 901
+BREAKING: Investor Claims to Have Found Hidden Patterns in Stock Charts Using Dream Interpretation: 1 with previous fair price at 1000, new at 1016
+BREAKING: Time Traveler Advises Investors to Buy Stock in 2026, Everyone Ignores It: 0 with previous fair price at 1016, new at 947
+BREAKING: Reddit Claims to Have Cracked the Code Behind Global Stock Movements: 1 with previous fair price at 1016, new at 1088
+BREAKING: Bigfoot Rumored to Be Behind the Latest Market Volatility: 0 with previous fair price at 1088, new at 913
+BREAKING: New Cryptocurrency Inspired by Time Travel Could Change the Market Forever: 0 with previous fair price at 1088, new at 1036
+BREAKING: Alien Signals Discovered, Investors Rush to ‘GalacticCoin’: 0 with previous fair price at 1088, new at 1008
+BREAKING: Financial Guru Says ‘Bigfoot Is The Real Inflation’: 1 with previous fair price at 1088, new at 1108
+BREAKING: Secret Billionaire Society Controls the Stock Market, Conspiracy Theorists Say: 0 with previous fair price at 1108, new at 1008
+BREAKING: Investor Makes First Million Trading Stocks Using Astrology and Ancient Tarot Cards: 0 with previous fair price at 1108, new at 1053
+BREAKING: Investors Use Quantum Computing to Predict the Next Big MemeCoin: 0 with previous fair price at 1108, new at 813
+BREAKING: Investor Claims to Have Found Hidden Patterns in Stock Charts Using Dream Interpretation: 0 with previous fair price at 1108, new at 1020
+BREAKING: Time-Traveling Investors Claim to Have Seen the Next Great Stock Boom: 0 with previous fair price at 1108, new at 1061
+BREAKING: Elon Tweets About New MemeCoin, Everyone Suddenly a Dogecoin Expert: 0 with previous fair price at 1108, new at 1014
+BREAKING: Financial Experts Say the Stock Market Is Controlled by Hidden Alien Forces: 0 with previous fair price at 1108, new at 884
+BREAKING: Investors Flock to ‘TimeCoin’ After Claims of Time Travel Backing It Up: 0 with previous fair price at 1108, new at 1018
+BREAKING: Twitter Poll Reveals 60% of Users Are Buying MemeStocks Based on Alien Theories: 0 with previous fair price at 1108, new at 907
+BREAKING: Analyst Claims That the Stock Market Is Controlled by Shape-Shifting Reptiles: 0 with previous fair price at 1108, new at 1094
+BREAKING: Local Hacker Claims to Have Found a Way to Short the Moon: 0 with previous fair price at 1108, new at 976
+BREAKING: Coin Based on Parallel Universes Declares Itself the Future of Global Finance: 1 with previous fair price at 1108, new at 1300
+BREAKING: Time Traveler Advises Investors to Buy Stock in 2026, Everyone Ignores It: 0 with previous fair price at 1300, new at 943
