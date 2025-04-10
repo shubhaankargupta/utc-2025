@@ -8,6 +8,12 @@ import argparse
 
 #IP address: 18.222.177.21
 #Password: Hrb8t5)V&q
+# TO GET TO PHOENIXHOOD:
+'''
+scp bot.py utc@18.222.177.21:~/
+ssh utc@18.222.177.21
+python3 bot.py --phoenixhood True
+'''
 
 class MyXchangeClient(xchange_client.XChangeClient):
 
