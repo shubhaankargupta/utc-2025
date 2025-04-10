@@ -17,13 +17,16 @@ class MyXchangeClient(xchange_client.XChangeClient):
         self.updates = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
         self.market_fair_prices = {symbol : 0 for symbol in ['AKAV', 'AKIM', 'APT', 'DLR', 'MKJ']}
     async def bot_handle_cancel_response(self, order_id: str, success: bool, error: Optional[str]) -> None:
-        order = self.open_orders[order_id]
-        print(f"{'Market' if order[2] else 'Limit'} Order ID {order_id} cancelled, {order[1]} unfilled")
+        if order_id in self.open_orders:
+            order = self.open_orders[order_id]
+            print(f"{'Market' if order[2] else 'Limit'} Order ID {order_id} cancelled, {order[1]} unfilled")
 
     async def bot_handle_order_fill(self, order_id: str, qty: int, price: int):
         print("order fill", self.positions)
 
     async def bot_handle_order_rejected(self, order_id: str, reason: str) -> None:
+        if order_id in self.open_orders:
+            await self.cancel_order(order_id)
         print("order rejected because of ", reason)
 
 
@@ -122,43 +125,44 @@ class MyXchangeClient(xchange_client.XChangeClient):
         self.updates['DLR'] = 0
         while True:
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.25)
+            for order in list(self.open_orders.keys()):
+                print(self.open_orders[order])
+                await self.cancel_order(order)
             for symbol in ['APT', 'DLR', 'MKJ', 'AKAV', 'AKIM']:
                 book = self.order_books[symbol]
                 sorted_bids = sorted((k,v) for k,v in book.bids.items() if v != 0)
                 sorted_asks = sorted((k,v) for k,v in book.asks.items() if v != 0)
-                print(f"Bids for {symbol}:\n{sorted_bids}")
-                print(f"Asks for {symbol}:\n{sorted_asks}")
+                # print(f"Bids for {symbol}:\n{sorted_bids}")
+                # print(f"Asks for {symbol}:\n{sorted_asks}")
                 if sorted_bids and sorted_asks:
                     bids_max = sorted_bids[-1][0]
                     ask_min = sorted_asks[0][0]
                     if bids_max < ask_min + 1:
                         self.market_fair_prices[symbol] = (bids_max + ask_min)//2
-                    else:
-                        self.market_fair_prices[symbol] = self.fair_prices[symbol]
                 if symbol in ['MKJ', 'AKAV', 'AKIM']:
                     self.fair_prices[symbol] = self.market_fair_prices[symbol]
                 # if there are no spreads, might also be worth it to just _not_ trade the stock at that moment
                 #         
                 print(f"Market fair price for {symbol} is {self.market_fair_prices[symbol]}\n")
 
-            for asset in ['APT', 'DLR']: #add DLR here later
-                fair_price = self.fair_prices[asset] #another thought: can replace all of these w/ market_fair_price and just frontrun/market make on that
-                market_buy_id = await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price-2))
-                market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price + 2))
-                print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
+            # for asset in ['APT', 'DLR', 'MKJ']: #add DLR here later
+            #     fair_price = self.market_fair_prices[asset] #another thought: can replace all of these w/ market_fair_price and just frontrun/market make on that
+            #     market_buy_id = await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price-2))
+            #     market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price + 2))
+            #     print(f"ORDERS PLACED FOR {asset}, buy at {fair_price-2}, sell at {fair_price+2}")
                 
-            mkj_price = self.market_fair_prices['MKJ']
-            mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(mkj_price-2))
-            market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(mkj_price + 2))
+            # mkj_price = self.market_fair_prices['MKJ']
+            # mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(mkj_price-2))
+            # market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(mkj_price + 2))
 
 
             # etf_mm = True
             # for asset in ['APT', 'DLR', 'MKJ', 'AKAV']:
             #     if asset not in self.spreads:
             #         etf_mm = False
-            # #Note: do not put any sleep() statements here bc orderbooks might update too fast
-            # #We want most updated prices
+            #Note: do not put any sleep() statements here bc orderbooks might update too fast
+            #We want most updated prices
 
             # #our fair buy price = best bid + 1
             # #our fair sell price = best ask - 1
@@ -168,43 +172,67 @@ class MyXchangeClient(xchange_client.XChangeClient):
             for asset in ['APT', 'DLR', 'MKJ']:
                 akav_fair_price += self.market_fair_prices[asset]
             
-            akav_market_price = self.fair_prices['AKAV']
+            akav_market_price = self.market_fair_prices['AKAV']
             if akav_market_price + 5 < akav_fair_price:
-                print("\nETF unbundling\n")
                 #buy etf, convert it back to individual stocks, buy them on exchange
                 #math time: if we buy etf for price p -> convert to x, y, z (our fair prices for buying)
-                market_buy_id = await self.place_order('AKAV', 1, xchange_client.Side.BUY, int(akav_market_price - 1))
-                # market_sell_id = await self.place_order('AKIM', 1, xchange_client.Side.SELL, self.market_fair_prices['AKIM']) 
-                await self.place_swap_order('fromAKAV', 1)
-                for asset in ['APT', 'DLR', 'MKJ']:
-                    fair_price = self.market_fair_prices[asset]
-                    market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price + 1))
-                    print(f"ORDERS PLACED FOR {asset}, sell {fair_price+1}")
+                spread = akav_fair_price - akav_market_price - 5
+                if spread >= 20:
+                    print("\n\nETF unbundling\n\n")
+                    market_buy_id = await self.place_order('AKAV', 1, xchange_client.Side.BUY, int(akav_market_price+1))
+                    # market_sell_id = await self.place_order('AKIM', 1, xchange_client.Side.SELL, self.market_fair_prices['AKIM']) 
+                    await self.place_swap_order('fromAKAV', 1)
+                    print(f"ORDER PLACED TO SWAP AKAV -> ASSETS\n")
+                    for asset in ['APT', 'DLR', 'MKJ']:
+                        fair_price = self.market_fair_prices[asset]
+                        market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price-1))
+                        print(f"ORDERS PLACED FOR {asset}, sell {fair_price-1}")
         
                 #     mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(fair_price-2))
                 #     market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(fair_price + 2))
-                print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, UNBUNDLE ETF -> ASSETS\n")
+                    print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, UNBUNDLE ETF -> ASSETS\n")
 
             elif akav_market_price > akav_fair_price + 5:
-                print("\nBundle into ETF\n")
-                await self.place_swap_order('toAKAV', 1)
-                await self.place_order('AKAV', 1, xchange_client.Side.SELL, int(akav_market_price+1))
-                for asset in ['APT', 'DLR', 'MKJ']:
-                    fair_price = self.market_fair_prices[asset]
-                    await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price-1))
-                
-                # market_buy_id = await self.place_order('AKIM', 1, xchange_client.Side.BUY, self.market_fair_prices['AKIM']-1)
-                print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, BUNDLE ASSETS INTO ETFs \n")
+                spread = akav_market_price - akav_fair_price - 5
+                if spread >= 20:
+                    print("\n\nBundle into ETF\n\n")
+                    await self.place_swap_order('toAKAV', 1)
+                    await self.place_order('AKAV', 1, xchange_client.Side.SELL, int(akav_market_price-1))
+                    print(f"SELL ORDER PLACED FOR AKAV at {int(akav_market_price+1)}")
+                    for asset in ['APT', 'DLR', 'MKJ']:
+                        fair_price = self.market_fair_prices[asset]
+                        await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price+1))
+                        print(f"BUY ORDER PLACED FOR {asset} at {int(fair_price-1)}")
+                    # market_buy_id = await self.place_order('AKIM', 1, xchange_client.Side.BUY, self.market_fair_prices['AKIM']-1)
+                    print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, BUNDLE ASSETS INTO ETFs \n")
             #This gives fairly good PNL against bots, but this is because bots are dumb
             #Next: figuring out how to price assets in a better manner
             #Also, figure out how to price ETFs. Might want to learn how to hedge AKIM w/ AKAV
+            for symbol in self.positions:
+                if symbol not in ['AKAV', 'APT', 'AKIM', 'DLR', 'MKJ']:
+                    continue
+                if self.positions[symbol] < 0:
+                    await self.place_order(symbol, -self.positions[symbol], xchange_client.Side.BUY, self.market_fair_prices[symbol]-1)
+                    print(f"BUY ORDER PLACED FOR {symbol} at {self.market_fair_prices[symbol]+1}")
+                elif self.positions[symbol] > 0: 
+                    await self.place_order(symbol, self.positions[symbol], xchange_client.Side.SELL, self.market_fair_prices[symbol]+1)
+                    print(f"SELL ORDER PLACED FOR {symbol} at {self.market_fair_prices[symbol]-1}")
+            pnl = 0
+            for symbol in self.positions:
+                if symbol == 'cash':
+                    pnl += self.positions[symbol] 
+                else:
+                    pnl += self.market_fair_prices[symbol] * self.positions[symbol]
+                
             print("my positions:", self.positions)
+            print(f"expected PNL: {pnl}")
+            await asyncio.sleep(1)
         # await self.cancel_order(list(self.open_orders.keys())[0])
         # await self.place_swap_order('toAKAV', 1)
         # await asyncio.sleep(5)
         # await self.place_swap_order('fromAKAV', 1)
         # await asyncio.sleep(5)
-        # await self.place_order("APT",1000, xchange_client.Side.SELL, 7)
+        # await self.place_order("APT",1000, xchange_clien  t.Side.SELL, 7)
         # market_order_id = await self.place_order("APT",10, xchange_client.Side.SELL)
         # print("MARKET ORDER ID:", market_order_id)
 
