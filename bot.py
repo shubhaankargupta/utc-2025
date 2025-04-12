@@ -57,15 +57,28 @@ class MyXchangeClient(xchange_client.XChangeClient):
         if news_type == "structured":
             subtype = news_data["structured_subtype"]
             symb = news_data["asset"]
+            print(news_release)
             if subtype == "earnings":
+                prev_fair_price = self.fair_prices['APT']
                 self.updates['APT'] += 1
                 earnings = news_data["value"]
                 self.fair_prices['APT'] = 10 * earnings #may have to change this value during the actual competition
                 #trade around this value
+                if self.fair_prices['APT'] >= prev_fair_price + 20:
+                    await self.place_order('APT', 30, xchange_client.Side.BUY)
+                    await self.place_order('AKAV', 30, xchange_client.Side.BUY)
+                    await self.place_order('AKIM', 30, xchange_client.Side.SELL)
+                elif prev_fair_price >= self.fair_prices['APT'] + 20:
+                    await self.place_order('APT', 30, xchange_client.Side.SELL)
+                    await self.place_order('AKAV', 30, xchange_client.Side.SELL)
+                    await self.place_order('AKIM', 30, xchange_client.Side.BUY)
             else:
-                self.updates['DLR'] += 1
+                prev_fair_price = self.fair_prices['DLR']
+                self.updates['DLR'] = (news_release['timestamp']//75 - news_release['timestamp']//450)
                 new_signatures = news_data["new_signatures"]
                 cumulative = news_data["cumulative"]
+                prev_cumulative = cumulative - new_signatures
+
                 #S_i = lognormal(log a + log S_(i-1), sigma^2)
                 #S_0 = 5000, alpha = 1.0630449594499
                 #sigma = 0.006
@@ -85,8 +98,30 @@ class MyXchangeClient(xchange_client.XChangeClient):
                 mu = np.log(cumulative) + rounds_remaining * np.log(alpha)  
                 tau = np.sqrt(rounds_remaining * sigma**2)
                 prob = 1 - lognorm.cdf(100000, s = tau, scale=np.exp(mu))
+                prev_mu = np.log(prev_cumulative) + (rounds_remaining+1) * np.log(alpha)  
+                prev_tau = np.sqrt((rounds_remaining+1) * sigma**2)
+                prev_prob = 1 - lognorm.cdf(100000, s = prev_tau, scale=np.exp(prev_mu))
+                prev_fair_price = prev_prob * 10000
                 self.fair_prices['DLR'] = prob * 10000
+                print(f"FAIR PRICE FOR DLR IS {self.fair_prices['DLR']}, PREV WAS {prev_fair_price}")
+                if self.fair_prices['DLR'] >= prev_fair_price + 20:
+                    await self.place_order('DLR', 30, xchange_client.Side.BUY)
+                    await self.place_order('AKAV', 30, xchange_client.Side.BUY)
+                    await self.place_order('AKIM', 30, xchange_client.Side.SELL)
+                elif prev_fair_price >= self.fair_prices['DLR'] + 20:
+                    await self.place_order('DLR', 30, xchange_client.Side.SELL)
+                    await self.place_order('AKAV', 30, xchange_client.Side.SELL)
+                    await self.place_order('AKIM', 30, xchange_client.Side.BUY)
                 # EV = 100 * p(will reach 100,000 sigs), so trade around this fair price
+
+            await asyncio.sleep(5)
+            for asset in ['AKAV', 'DLR', 'APT', 'AKIM']:
+                if self.positions[asset] > 0:
+                    for i in range(self.positions[asset]//20):
+                        await self.place_order(asset, 20, xchange_client.Side.SELL)
+                elif self.positions[asset] < 0:
+                    for i in range(self.positions[asset]//20):
+                        await self.place_order(asset, 20, xchange_client.Side.BUY)
 
         else:
             increased = 0
@@ -132,9 +167,9 @@ class MyXchangeClient(xchange_client.XChangeClient):
         while True:
 
             await asyncio.sleep(0.25)
-            for order in list(self.open_orders.keys()):
-                print(self.open_orders[order])
-                await self.cancel_order(order)
+            # for order in list(self.open_orders.keys()):
+            #     print(self.open_orders[order])
+            #     await self.cancel_order(order)
             for symbol in ['APT', 'DLR', 'MKJ', 'AKAV', 'AKIM']:
                 book = self.order_books[symbol]
                 sorted_bids = sorted((k,v) for k,v in book.bids.items() if v != 0)
@@ -174,55 +209,54 @@ class MyXchangeClient(xchange_client.XChangeClient):
             # #our fair sell price = best ask - 1
             # #if we have an etf at best bid + 1, it's optimal to buy if best bid + 1 (etf) + 5 < sum (fair buy prices)
             # #if we have an etf at best_ask - 1, it's optimal to sell if sum (fair sell prices) + 5 < best_sell -1
-            akav_fair_price = 0
-            for asset in ['APT', 'DLR', 'MKJ']:
-                akav_fair_price += self.market_fair_prices[asset]
+            # akav_fair_price = 0
+            # for asset in ['APT', 'DLR', 'MKJ']:
+            #     akav_fair_price += self.market_fair_prices[asset]
             
-            akav_market_price = self.market_fair_prices['AKAV']
-            if akav_market_price + 5 < akav_fair_price:
-                #buy etf, convert it back to individual stocks, buy them on exchange
-                #math time: if we buy etf for price p -> convert to x, y, z (our fair prices for buying)
-                spread = akav_fair_price - akav_market_price - 5
-                if spread >= 20:
-                    print("\n\nETF unbundling\n\n")
-                    market_buy_id = await self.place_order('AKAV', 1, xchange_client.Side.BUY, int(akav_market_price+1))
-                    # market_sell_id = await self.place_order('AKIM', 1, xchange_client.Side.SELL, self.market_fair_prices['AKIM']) 
-                    await self.place_swap_order('fromAKAV', 1)
-                    print(f"ORDER PLACED TO SWAP AKAV -> ASSETS\n")
-                    for asset in ['APT', 'DLR', 'MKJ']:
-                        fair_price = self.market_fair_prices[asset]
-                        market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL, int(fair_price-1))
-                        print(f"ORDERS PLACED FOR {asset}, sell {fair_price-1}")
+            # akav_market_price = self.market_fair_prices['AKAV']
+            # if akav_market_price + 5 < akav_fair_price:
+            #     #buy etf, convert it back to individual stocks, buy them on exchange
+            #     #math time: if we buy etf for price p -> convert to x, y, z (our fair prices for buying)
+            #     spread = akav_fair_price - akav_market_price - 5
+            #     if spread >= 20:
+            #         print("\n\nETF unbundling\n\n")
+            #         market_buy_id = await self.place_order('AKAV', 1, xchange_client.Side.BUY)
+            #         # market_sell_id = await self.place_order('AKIM', 1, xchange_client.Side.SELL, self.market_fair_prices['AKIM']) 
+            #         await self.place_swap_order('fromAKAV', 1)
+            #         print(f"ORDER PLACED TO SWAP AKAV -> ASSETS\n")
+            #         for asset in ['APT', 'DLR', 'MKJ']:
+            #             fair_price = self.market_fair_prices[asset]
+            #             market_sell_id = await self.place_order(asset, 1, xchange_client.Side.SELL)
+            #             print(f"ORDERS PLACED FOR {asset}")
         
-                #     mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(fair_price-2))
-                #     market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(fair_price + 2))
-                    print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, UNBUNDLE ETF -> ASSETS\n")
+            #     #     mkj_buy_id = await self.place_order('MKJ', 1, xchange_client.Side.BUY, int(fair_price-2))
+            #     #     market_sell_id = await self.place_order('MKJ', 1, xchange_client.Side.SELL, int(fair_price + 2))
+            #         print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, UNBUNDLE ETF -> ASSETS\n")
 
-            elif akav_market_price > akav_fair_price + 5:
-                spread = akav_market_price - akav_fair_price - 5
-                if spread >= 20:
-                    print("\n\nBundle into ETF\n\n")
-                    await self.place_swap_order('toAKAV', 1)
-                    await self.place_order('AKAV', 1, xchange_client.Side.SELL, int(akav_market_price-1))
-                    print(f"SELL ORDER PLACED FOR AKAV at {int(akav_market_price+1)}")
-                    for asset in ['APT', 'DLR', 'MKJ']:
-                        fair_price = self.market_fair_prices[asset]
-                        await self.place_order(asset, 1, xchange_client.Side.BUY, int(fair_price+1))
-                        print(f"BUY ORDER PLACED FOR {asset} at {int(fair_price-1)}")
-                    # market_buy_id = await self.place_order('AKIM', 1, xchange_client.Side.BUY, self.market_fair_prices['AKIM']-1)
-                    print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, BUNDLE ASSETS INTO ETFs \n")
+            # elif akav_market_price > akav_fair_price + 5:
+            #     spread = akav_market_price - akav_fair_price - 5
+            #     if spread >= 20:
+            #         print("\n\nBundle into ETF\n\n")
+            #         await self.place_swap_order('toAKAV', 1)
+            #         await self.place_order('AKAV', 1, xchange_client.Side.SELL)
+            #         print(f"SELL ORDER PLACED FOR AKAV")
+            #         for asset in ['APT', 'DLR', 'MKJ']:
+            #             await self.place_order(asset, 1, xchange_client.Side.BUY)
+            #             print(f"BUY ORDER PLACED FOR {asset}")
+            #         # market_buy_id = await self.place_order('AKIM', 1, xchange_client.Side.BUY, self.market_fair_prices['AKIM']-1)
+            #         print(f"ETF AKAV PRICED AT {akav_market_price}, SUM OF ASSETS IS {akav_fair_price}, BUNDLE ASSETS INTO ETFs \n")
             #This gives fairly good PNL against bots, but this is because bots are dumb
             #Next: figuring out how to price assets in a better manner
             #Also, figure out how to price ETFs. Might want to learn how to hedge AKIM w/ AKAV
-            for symbol in self.positions:
-                if symbol not in ['AKAV', 'APT', 'AKIM', 'DLR', 'MKJ']:
-                    continue
-                if self.positions[symbol] < 0:
-                    await self.place_order(symbol, -self.positions[symbol], xchange_client.Side.BUY, self.market_fair_prices[symbol]-1)
-                    print(f"BUY ORDER PLACED FOR {symbol} at {self.market_fair_prices[symbol]+1}")
-                elif self.positions[symbol] > 0: 
-                    await self.place_order(symbol, self.positions[symbol], xchange_client.Side.SELL, self.market_fair_prices[symbol]+1)
-                    print(f"SELL ORDER PLACED FOR {symbol} at {self.market_fair_prices[symbol]-1}")
+            # for symbol in self.positions:
+            #     if symbol not in ['AKAV', 'APT', 'AKIM', 'DLR', 'MKJ']:
+            #         continue
+            #     if self.positions[symbol] < 0:
+            #         await self.place_order(symbol, -self.positions[symbol], xchange_client.Side.BUY, self.market_fair_prices[symbol]-1)
+            #         print(f"BUY ORDER PLACED FOR {symbol} at {self.market_fair_prices[symbol]+1}")
+            #     elif self.positions[symbol] > 0: 
+            #         await self.place_order(symbol, self.positions[symbol], xchange_client.Side.SELL, self.market_fair_prices[symbol]+1)
+            #         print(f"SELL ORDER PLACED FOR {symbol} at {self.market_fair_prices[symbol]-1}")
             pnl = 0
             for symbol in self.positions:
                 if symbol == 'cash':
@@ -265,7 +299,7 @@ user_interface = False
 
 async def main(user_interface : bool):
     # SERVER = '127.0.0.1:8000'   # run locally
-    SERVER = '3.138.154.148:3333' # run sandbox
+    SERVER = 'server.uchicagotradingcompetition25.com:3333' # run sandbox
     my_client = MyXchangeClient(SERVER,"chicago4","Hrb8t5)V&q")
     await my_client.start(user_interface)
     return
