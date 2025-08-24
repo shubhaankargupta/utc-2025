@@ -1,5 +1,6 @@
 # UChicago-Trading-Competition-2025
 Team: UChicago Team 4
+
 Lina Piao, Sriram Ananthakrishnan, Shubhaankar Gupta, Winston Gan
 
 Contains Jupyter notebook with portfolio allocation code, as well as ETF market making code.
